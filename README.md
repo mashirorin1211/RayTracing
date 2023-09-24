@@ -1,5 +1,5 @@
 # RayTracing
-師大高等計算機圖學作業
+
 
 The goal of this assignment is to build a simple ray tracing program. It is separated into two parts, 
 each with its own due date. This assignment is Part A.
