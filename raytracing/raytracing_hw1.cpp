@@ -416,7 +416,7 @@ int main(){
 	float radius = file_radius(data2);
 	vector<vec3> triangle_point = file_triangle(data2);
 
-	//PPM photo(256,256);
+	
 	colorimage photo(resolution, resolution);
 
 
