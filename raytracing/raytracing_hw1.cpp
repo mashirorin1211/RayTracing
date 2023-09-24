@@ -49,6 +49,171 @@ private:
 };
 
 
+
+
+colorimage::~colorimage() {
+	delete_image();
+}
+
+colorimage::colorimage(int height, int width) {
+	set_height(height);
+	set_width(width);
+	create_image();
+}
+
+void colorimage::save_data(string name_file) {
+	ofstream output(name_file, ios::binary);
+
+	if (output.is_open()) {
+		output << version << endl;
+		output << width << " " << height << endl;
+		output << 255 << endl;
+
+		if (version == "p3") {
+			for (int i = 0; i < height; i++) {
+				for (int j = 0; j < width; j++) {
+					output << (int)image[i][j].r << " ";
+					output << (int)image[i][j].g << " ";
+					output << (int)image[i][j].b << '\n';
+				}
+			}
+		}
+		else {
+			for (int i = 0; i < height; i++) {
+				for (int j = 0; j < width; j++) {
+					output.write((char*)&image[i][j], sizeof(pixel));
+				}
+			}
+		}
+		output.close();
+	}
+}
+
+void colorimage::read_data(string name_file) {
+	ifstream input(name_file, ios::binary);
+
+	if (input.is_open()) {
+		int color;
+		char ver[3];
+
+		input.read(ver, 2);
+		version = ver;
+		input >> width;
+		input >> height;
+		input >> color;
+		input.read(ver, 1);
+
+		create_image();
+
+		int box;
+		if (version == "P3") {
+			for (int i = 0; i < height; i++) {
+				for (int j = 0; j < width; j++) {
+					input >> box;
+					image[i][j].r = box;
+					input >> box;
+					image[i][j].g = box;
+					input >> box;
+					image[i][j].b = box;
+				}
+			}
+		}
+		else {
+			for (int i = 0; i < height; i++) {
+				for (int j = 0; j < width; j++) {
+					input.read((char*)&image[i][j], sizeof(pixel));
+				}
+			}
+		}
+		input.close();
+	}
+}
+
+
+void colorimage::create_image() {
+	if (image != nullptr) {
+		delete_image();
+	}
+
+	image = new pixel * [height];
+
+	for (int i = 0; i < height; i++) {
+		image[i] = new pixel[width];
+
+		for (int j = 0; j < width; j++) {
+			image[i][j].r = 255;
+			image[i][j].g = 255;
+			image[i][j].b = 255;
+		}
+	}
+}
+
+void colorimage::horizontal_flip() {
+	for (int i = 0; i < height; i++) {
+		for (int j = 0; j < width / 2; j++) {
+			swap(image[i][j], image[i][width - 1 - j]);
+		}
+	}
+}
+
+void colorimage::vertical_flip() {
+	for (int i = 0; i < height / 2; i++) {
+		for (int j = 0; j < width; j++) {
+			swap(image[i][j], image[height - 1 - i][j]);
+		}
+	}
+}
+
+void colorimage::gray_scale() {
+	const float r = 0.299f;
+	const float g = 0.587f;
+	const float b = 0.114f;
+	float greyscaleValue;
+
+	for (int i = 0; i < height / 2; i++) {
+		for (int j = 0; j < width; j++) {
+			greyscaleValue = image[i][j].r * r + image[i][j].g * g + image[i][j].b * b;
+			image[i][j].r = greyscaleValue;
+			image[i][j].g = greyscaleValue;
+			image[i][j].b = greyscaleValue;
+		}
+	}
+}
+
+void colorimage::delete_image() {
+	if (image != nullptr) {
+		for (int i = 0; i < height; i++) {
+			delete image[i];
+		}
+		delete image;
+	}
+}
+
+void colorimage::resize(int height, int width) {
+	pixel** image_resized = new pixel * [height];
+	for (int i = 0; i < height; i++) {
+		image_resized[i] = new pixel[width];
+
+		for (int j = 0; j < width; j++) {
+			image_resized[i][j].r = 255;
+			image_resized[i][j].g = 255;
+			image_resized[i][j].b = 255;
+		}
+	}
+	for (int i = 0; i < height; i++) {
+		for (int j = 0; j < width; j++) {
+			image_resized[i][j] = image[i * this->height / height][j * this->width / width];
+		}
+	}
+
+	delete_image();
+	image = image_resized;
+
+	this->height = height;
+	this->width = width;
+}
+
+
 // 檢查浮點數
 bool check_floating_number(const string& str){
     int i = 0;
@@ -202,7 +367,6 @@ bool hit_sphere(const vec3& center, float radius, const vec3& eyeposition, const
 
 int main(){
 
-
     string hw1_input;
 	vector<vector<string>> data2;
 	vector<string> data1;
@@ -263,9 +427,9 @@ int main(){
 			z = screen[2] + j * horizonzgap + 0.5 * horizonzgap + i * verticalzgap + 0.5 * verticalzgap;
 			vec3 point(x, y, z);
 			if (hit_sphere(sphere_point, radius, eye, point)) {
-				photo.image[i][j].r = (unsigned char)(0);
-				photo.image[i][j].g = (unsigned char)(0);
-				photo.image[i][j].b = (unsigned char)(0);
+				photo.image[i][j].r = (unsigned char)(255*(x+1.0)/2.0);
+				photo.image[i][j].g = (unsigned char)(255*(y+1.0)/2.0);
+				photo.image[i][j].b = (unsigned char)(255*(z+1.0)/2.0);
 
 
 			}
@@ -284,168 +448,3 @@ int main(){
 }
 
 
-colorimage::~colorimage() {
-	delete_image();
-}
-
-colorimage::colorimage(int height, int width) {
-	set_height(height);
-	set_width(width);
-	create_image();
-}
-
-void colorimage::save_data(string name_file) {
-	ofstream output(name_file, ios::binary);
-
-	if (output.is_open()) {
-		output << version << endl;
-		output << width << " " << height << endl;
-		output << 255 << endl;
-
-		if (version == "p3") {
-			for (int i = 0; i < height; i++) {
-				for (int j = 0; j < width; j++) {
-					output << (int)image[i][j].r << " ";
-					output << (int)image[i][j].g << " ";
-					output << (int)image[i][j].b << '\n';
-
-				}
-			}
-
-		}
-		else {
-			for (int i = 0; i < height; i++) {
-				for (int j = 0; j < width; j++) {
-					output.write((char*)&image[i][j], sizeof(pixel));
-				}
-			}
-		}
-		output.close();
-	}
-}
-
-void colorimage::read_data(string name_file) {
-	ifstream input(name_file, ios::binary);
-
-	if (input.is_open()) {
-		int color;
-		char ver[3];
-
-		input.read(ver, 2);
-		version = ver;
-		input >> width;
-		input >> height;
-		input >> color;
-		input.read(ver, 1);
-
-		create_image();
-
-		int box;
-		if (version == "P3") {
-			for (int i = 0; i < height; i++) {
-				for (int j = 0; j < width; j++) {
-					input >> box;
-					image[i][j].r = box;
-					input >> box;
-					image[i][j].g = box;
-					input >> box;
-					image[i][j].b = box;
-				}
-
-			}
-
-		}
-		else {
-			for (int i = 0; i < height; i++) {
-				for (int j = 0; j < width; j++) {
-					input.read((char*)&image[i][j], sizeof(pixel));
-				}
-			}
-
-		}
-		input.close();
-	}
-
-}
-void colorimage::create_image() {
-	if (image != nullptr) {
-		delete_image();
-	}
-
-	image = new pixel * [height];
-
-	for (int i = 0; i < height; i++) {
-		image[i] = new pixel[width];
-
-		for (int j = 0; j < width; j++) {
-			image[i][j].r = 255;
-			image[i][j].g = 255;
-			image[i][j].b = 255;
-		}
-	}
-}
-
-void colorimage::horizontal_flip() {
-	for (int i = 0; i < height; i++) {
-		for (int j = 0; j < width / 2; j++) {
-			swap(image[i][j], image[i][width - 1 - j]);
-		}
-	}
-}
-
-void colorimage::vertical_flip() {
-	for (int i = 0; i < height / 2; i++) {
-		for (int j = 0; j < width; j++) {
-			swap(image[i][j], image[height - 1 - i][j]);
-		}
-	}
-}
-
-void colorimage::gray_scale() {
-	const float r = 0.299f;
-	const float g = 0.587f;
-	const float b = 0.114f;
-	float greyscaleValue;
-
-	for (int i = 0; i < height / 2; i++) {
-		for (int j = 0; j < width; j++) {
-			greyscaleValue = image[i][j].r * r + image[i][j].g * g + image[i][j].b * b;
-			image[i][j].r = greyscaleValue;
-			image[i][j].g = greyscaleValue;
-			image[i][j].b = greyscaleValue;
-		}
-	}
-}
-
-void colorimage::delete_image() {
-	if (image != nullptr) {
-		for (int i = 0; i < height; i++) {
-			delete image[i];
-		}
-		delete image;
-	}
-}
-
-void colorimage::resize(int height, int width) {
-	pixel** image_resized = new pixel * [height];
-	for (int i = 0; i < height; i++) {
-		image_resized[i] = new pixel[width];
-
-		for (int j = 0; j < width; j++) {
-			image_resized[i][j].r = 255;
-			image_resized[i][j].g = 255;
-			image_resized[i][j].b = 255;
-		}
-	}
-	for (int i = 0; i < height; i++) {
-		for (int j = 0; j < width; j++) {
-			image_resized[i][j] = image[i * this->height / height][j * this->width / width];
-		}
-	}
-
-	delete_image();
-	image = image_resized;
-
-	this->height = height;
-	this->width = width;
-}
