@@ -320,15 +320,37 @@ bool hit_triangle(vec3 trianglepoint1, vec3 trianglepoint2, vec3 trianglepoint3,
 	vec3 normalvector = (trianglepoint2 - trianglepoint1) ^ (trianglepoint3 - trianglepoint1);
 
 	float NdotRayDirection = direction * normalvector;
-	if (fabs(NdotRayDirection) < 0.0000000000000001) {
+	if (fabs(NdotRayDirection) <  0.0000000000000001) {
 		return false;
 	}
 
-	float D = (normalvector * trianglepoint1) * (-1);
+	float D = (( normalvector * trianglepoint1)) * (1);
 	float t = (-(normalvector * eyeposition) + D) / (normalvector * direction);
 	if (t < 0) {
 		return false;
 	}
+   	else if (t == 0) {
+       vec3 P = eyeposition;
+       vec3 C;
+
+       vec3 edge = trianglepoint2 - trianglepoint1;
+       vec3 vp = P - trianglepoint1;
+       C = edge ^ vp;
+       if ((normalvector * C) < 0) return false;
+
+       edge = trianglepoint3 - trianglepoint2;
+       vp = P - trianglepoint2;
+       C = edge ^ vp;
+       if ((normalvector * C) < 0) return false;
+
+       edge = trianglepoint1 - trianglepoint3;
+       vp = P - trianglepoint3;
+       C = edge ^ vp;
+       if ((normalvector * C) < 0) return false;
+
+       return true;
+   }
+
 	vec3 P = eyeposition + t * direction;
 	vec3 C;
 
@@ -349,6 +371,7 @@ bool hit_triangle(vec3 trianglepoint1, vec3 trianglepoint2, vec3 trianglepoint3,
 		return false;
 	}
 	return true;
+	
 }
 
 
@@ -415,8 +438,6 @@ int main(){
 	vec3 sphere_point = file_sphere(data2);
 	float radius = file_radius(data2);
 	vector<vec3> triangle_point = file_triangle(data2);
-
-	
 	colorimage photo(resolution, resolution);
 
 
@@ -433,18 +454,18 @@ int main(){
 
 
 			}
-			for (int k = 0; k < triangle_point.size() / 3; ++k) {
+			int k = 0;
+			for (k = 0; (k < triangle_point.size() / 3); ++k) {
 				if (hit_triangle(triangle_point[3 * k], triangle_point[3 * k + 1], triangle_point[3 * k + 2], eye, point) == true) {
-					photo.image[i][j].r = (unsigned char)(0);
-					photo.image[i][j].g = (unsigned char)(0);
-					photo.image[i][j].b = (unsigned char)(0);
+					photo.image[i][j].r = (unsigned char)(255*(z+1.0)/5.0);
+					photo.image[i][j].g = (unsigned char)(255*(z+1.0)/5.0);
+					photo.image[i][j].b = (unsigned char)(255*(z+1.0)/5.0);
 				}
 			}
-
 		}
 	}
     photo.save_data("raytracing_hw1.ppm");
-
+			
 }
 
 
